@@ -348,7 +348,7 @@ exit
 This walkthrough has been realized using the [REST API Quick Start](https://stargate.io/docs/stargate/0.1/quickstart/quick_start-rest.html)
 
 
-**✅  Generate an auth token** :
+**✅ 4a. Generate an auth token** :
 
 ```bash
 curl -L -X POST 'http://localhost:8081/v1/auth' \
@@ -366,13 +366,14 @@ Copy the token value (here `74be42ef-3431-4193-b1c1-cd8bd9f48132`) in your clipb
 {"authToken":"74be42ef-3431-4193-b1c1-cd8bd9f48132"}
 ```
 
-**✅ List keyspaces** : 
+**✅ 4b. List keyspaces** : 
 
 Locate the `SCHEMAS` part of the API
 
 ![image](pics/swagger-general.png?raw=true)
 
- Localt `listAllKeyspaces` [method on GET](http://localhost:8082/swagger-ui/#/schemas/listAllKeyspaces)
+ Locale in SCHEMA
+ `[GET] /v2/schemas/keyspaces`
 
 ![image](pics/swagger-list-keyspace.png?raw=true)
 
@@ -380,19 +381,34 @@ Locate the `SCHEMAS` part of the API
 - Provide your token in the field `X-Cassandra-Token`
 - Click on `Execute`
 
-**✅ Creating a keyspace2** : 
+**✅ 4c. List Tables** : 
 
-- [createKeyspace](http://localhost:8082/swagger-ui/#/schemas/createKeyspace)
-- Data
-```json
-{"name": "keyspace2","replicas": 3}
-```
+Locate the `SCHEMAS` part of the API
 
-**✅ Creating a Table** : 
+![image](pics/swagger-list-tables.png?raw=true)
 
-- [addTable](http://localhost:8082/swagger-ui/#/schemas/addTable)
+- Click `Try it out`
+- Provide your token in the field `X-Cassandra-Token`
+- keyspace: `keyspace1`
+- Click on `Execute`
+
+**✅ 4d. List Types** : 
+
+Locate the `SCHEMAS` part of the API
+
+![image](pics/swagger-list-types.png?raw=true)
+
+- Click `Try it out`
+- Provide your token in the field `X-Cassandra-Token`
+- keyspace: `keyspace1`
+
+
+**✅ 4e Create a Table** : 
+
+![image](pics/swagger-create-table.png?raw=true)
+
 - X-Cassandra-Token: `<your_token>`
-- keyspace: `keyspace2`
+- keyspace: `keyspace1`
 - Data
 ```json
 {
@@ -412,7 +428,7 @@ Locate the `SCHEMAS` part of the API
         "typeDefinition": "text"
       },
         {
-        "name": "favorite color",
+        "name": "color",
         "typeDefinition": "text"
       }
     ],
@@ -432,12 +448,15 @@ Locate the `SCHEMAS` part of the API
 
 Now Locate the `DATA` part of the API
 
-**✅ Insert a row** : 
+**✅ 4f. Insert a row** : 
 
-- [createRow](http://localhost:8082/swagger-ui/#/data/createRow)
+Navigate to `DATA` and focus on `V2`
+
+![image](pics/swagger-addrows.png?raw=true)
+
 - X-Cassandra-Token: `<your_token>`
-- keyspace: `keyspace2`
-- table: `users`
+- keyspaceName: `keyspace1`
+- tableName: `users`
 - Data
 ```json
 {   
@@ -457,39 +476,15 @@ Now Locate the `DATA` part of the API
 }
 ```
 
-**✅ Read data** : 
+**✅ 4g. Read data** : 
 
-- [getAllRows](http://localhost:8082/swagger-ui/#/data/getAllRows)
+![image](pics/swagger-listrows.png?raw=true)
+
+
 - X-Cassandra-Token: `<your_token>`
-- keyspace: `keyspace2`
-- table: `users`
+- keyspaceName: `keyspace1`
+- tableName: `users`
 
-
-**✅ Update a row** : 
-
-You can do them in curl
-
-```
-export AUTH_TOKEN=<your_token>
-```
-
-```
-curl --location \
---request PUT 'localhost:8082/v2/keyspaces/users_keyspace/users/Mookie/Betts' \
---header "X-Cassandra-Token: $AUTH_TOKEN" \
---header 'Content-Type: application/json' \
---data '{
-    "email": "mookie.betts.new-email@email.com"
-}'
-```
-
-**✅ Delete a row** : 
-```
-curl --location \
---request DELETE 'localhost:8082/v2/keyspaces/users_keyspace/users/Mookie' \
---header "X-Cassandra-Token: $AUTH_TOKEN" \
---header 'Content-Type: application/json'
-```
 
 [🏠 Back to Table of Contents](#table-of-content)
 
@@ -497,67 +492,22 @@ curl --location \
 
 This walkthrough has been realized using the [Quick Start](https://stargate.io/docs/stargate/0.1/quickstart/quick_start-document.html)
 
-**✅ Generate an auth token** :
 
-Same as Rest API generate a `auth token` 
-```bash
-curl -L -X POST 'http://localhost:8081/v1/auth' \
-  -H 'Content-Type: application/json' \
-  --data-raw '{
-    "username": "cassandra",
-    "password": "cassandra"
-}'
-```
 
-Save output as an environment variable
+**✅ 5a. List Namespaces** :
 
-```
-export AUTH_TOKEN=5d746e40-97cf-490b-ab0d-68cfbc5d2ef3
-```
+![image](pics/swagger-doc-listnamespaces.png?raw=true)
 
-**✅ Creating a namespace** :
 
-- Access [createNamespace](http://localhost:8082/swagger-ui/#/documents/createNamespace) in swagger UI
-- Fill with Header `X-Cassandra-Token` with `<your_token>`
-- Use this payload as JSON
-```json
-{ "name": "namespace1", "replicas": 3 }
-```
-
-**✅ Checking namespace existence** :
-
-- Access [getAllNamespaces](http://localhost:8082/swagger-ui/#/documents/getAllNamespaces) in swagger UI
-- Fill with Header `X-Cassandra-Token` with `<your_token>`
-- For `raw` you can use either `true` or `false`
-
-**👁️ Expected output**
-```json
-{
-  "data": [
-    { "name": "system_distributed" },
-    { "name": "system" },
-    { "name": "data_endpoint_auth"},
-    { "name": "keyspace1" },
-    { "name": "namespace1"},
-    { "name": "system_schema"},
-    { "name": "keyspace2" },
-    { "name": "stargate_system"},
-    { "name": "system_auth" },
-    { "name": "system_traces"}
-  ]
-}
-```
-
-**✅ Create a document** :
+**✅ 5b. Create a document** :
 
 *Note: operations requiring providing `namespace` and `collections` on the swagger UI seems not functional. We are switching to CURL the API is working, this is a documentation bug that has been notified to the development team.*
 
-```bash
-curl --location \
---request POST 'localhost:8082/v2/namespaces/namespace1/collections/videos' \
---header "X-Cassandra-Token: $AUTH_TOKEN" \
---header 'Content-Type: application/json' \
---data '{
+![image](pics/swagger-doc-create.png?raw=true)
+
+
+```json
+{
    "videoid":"e466f561-4ea4-4eb7-8dcc-126e0fbfd573",
      "email":"clunven@sample.com",
      "title":"A Second videos",
@@ -569,87 +519,29 @@ curl --location \
         "mp4": {"width":1,"height":1},
         "ogg": {"width":1,"height":1}
      }
-}'
-```
-
-**👁️ Expected output**:
-```json
-{
-  "documentId":"5d746e40-97cf-490b-ab0d-68cfbc5d2ef3"
 }
 ```
 
-**✅ Retrieve documents** :
+**✅ 5c. Retrieve documents** :
 
-```bash
-curl --location \
---request GET 'localhost:8082/v2/namespaces/namespace1/collections/videos?page-size=3' \
---header "X-Cassandra-Token: $AUTH_TOKEN" \
---header 'Content-Type: application/json'
-```
+![image](pics/swagger-doc-search.png?raw=true)
 
-**👁️ Expected output**:
+
+
+**✅ 5d. Retrieve 1 document** :
+
+![image](pics/swagger-doc-get.png?raw=true)
+
+
+**✅ 5e. Search for document by properties** :
+
+
+![image](pics/swagger-doc-search.png?raw=true)
+
+- WhereClause
+
 ```json
-{
-  "data":{
-    "5d746e40-97cf-490b-ab0d-68cfbc5d2ef3":{
-      "email":"clunven@sample.com",
-      "formats":{"mp4":{"height":1,"width":1},"ogg":{"height":1,"width":1}},"frames":[1,2,3,4],
-      "tags":["cassandra","accelerate","2020"],"title":"A Second videos","upload":"2020-02-26 15:09:22 +00:00","url":"http://google.fr","videoid":"e466f561-4ea4-4eb7-8dcc-126e0fbfd573"
-     }
-   }
-}
-```
-
-**✅ Retrieve 1 document** :
-
-```bash
-curl -L \
--X GET 'localhost:8082/v2/namespaces/namespace1/collections/videos/5d746e40-97cf-490b-ab0d-68cfbc5d2ef3' \
---header "X-Cassandra-Token: $AUTH_TOKEN" \
---header 'Content-Type: application/json'
-```
-
-**👁️ Expected output**:
-```json
-{
-  "documentId":"5d746e40-97cf-490b-ab0d-68cfbc5d2ef3",
-  "data":{
-     "email":"clunven@sample.com",
-     "formats":{"mp4":{"height":1,"width":1},"ogg":{"height":1,"width":1}},
-     "frames":[1,2,3,4],
-     "tags":["cassandra","accelerate","2020"],
-     "title":"A Second videos",
-     "upload":"2020-02-26 15:09:22 +00:00",
-     "url":"http://google.fr",
-     "videoid":"e466f561-4ea4-4eb7-8dcc-126e0fbfd573"
-   }
-}
-```
-
-**✅ Search for document by properties** :
-
-```bash
-curl -L -X  GET 'localhost:8082/v2/namespaces/namespace1/collections/videos?where=\{"email":\{"$eq":"clunven@sample.com"\}\}' \
---header "X-Cassandra-Token: $AUTH_TOKEN" \
---header 'Content-Type: application/json'
-```
-
-**👁️ Expected output**:
-```json
-{"data":{
-   "5d746e40-97cf-490b-ab0d-68cfbc5d2ef3":{
-      "email":"clunven@sample.com",
-      "formats":{"mp4":{"height":1,"width":1},"ogg":{"height":1,"width":1}},
-      "frames":[1,2,3,4],
-      "tags":["cassandra","accelerate","2020"],
-      "title":"A Second videos",
-      "upload":"2020-02-26 15:09:22 +00:00",
-      "url":"http://google.fr",
-      "videoid":"e466f561-4ea4-4eb7-8dcc-126e0fbfd573"
-    }
-  }
-}
+{"email": {"$eq": "clunven@sample.com"}}
 ```
 
 [🏠 Back to Table of Contents](#table-of-content)
@@ -660,7 +552,7 @@ This walkthrough has been realized using the [GraphQL Quick Start](https://starg
 
 Same as Rest API generate a `auth token` 
 
-**✅ Generate Auth token** :
+**✅ 6a Generate Auth token** :
 ```bash
 curl -L -X POST 'http://localhost:8081/v1/auth' \
   -H 'Content-Type: application/json' \
@@ -675,7 +567,7 @@ Save output as an environment variable
 export AUTH_TOKEN=7c37bda5-7360-4d39-96bc-9765db5773bc
 ```
 
-**✅ Open GraphQL Playground** :
+**✅ 6b. Open GraphQL Playground** :
 
 - You should be able to access the GRAPH QL PORTAL on [http://localhost:8080/playground](http://localhost:8080/playground)
 
@@ -684,29 +576,7 @@ You can check on the right of the playground that you have access to documentati
 **👁️ Expected output**
 ![image](pics/playground-home.png?raw=true)
 
-**✅ Creating a keyspace** :
-
-Before you can start using the GraphQL API, you must first create a Cassandra keyspace and at least one table in your database. If you are connecting to a Cassandra database with existing schema, you can skip this step.
-
-Inside the GraphQL playground, navigate to http://localhost:8080/graphql-schema and create a keyspace by executing the following mutation:
-
-```
-mutation createKeyspaceLibrary {
-  createKeyspace(name:"library", replicas: 1)
-}
-```
-
-Add the auth token to the HTTP Headers box in the lower lefthand corner:
-```
-{
-  "x-cassandra-token":"7c37bda5-7360-4d39-96bc-9765db5773bc"
-}
-```
-
-**👁️ Expected output**
-![image](pics/graphql-createkeyspace.png?raw=true)
-
-**✅ Creating a Table** :
+**✅ 6c. Creating a Table** :
 
 - Use this query
 ```
@@ -737,7 +607,7 @@ mutation {
 **👁️ Expected output**
 ![image](pics/graphql-createtables.png?raw=true)
 
-**✅ Populating Table** :
+**✅ 6d. Populating Table** :
 
 Any of the created APIs can be used to interact with the GraphQL data, to write or read data.
 
@@ -769,7 +639,7 @@ mutation {
 ![image](pics/graphql-insertdata.png?raw=true)
 
 
-**✅ Read data** :
+**✅ 6e. Read data** :
 
 Stay on the same screen and sinmply update the query with 
 ```
