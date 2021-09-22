@@ -11,31 +11,6 @@ services:
     environment:
       - HEAP_NEWSIZE=128M
       - MAX_HEAP_SIZE=1024M
-      - CASSANDRA_SEEDS=backend-1
-      - CASSANDRA_CLUSTER_NAME=c4-${CASSTAG}-cluster
-  backend-2:
-    image: cassandra:${CASSTAG}
-    networks:
-      - backend
-    mem_limit: 2G
-    depends_on:
-      - backend-1
-    environment:
-      - HEAP_NEWSIZE=128M
-      - MAX_HEAP_SIZE=1024M
-      - CASSANDRA_SEEDS=backend-1
-      - CASSANDRA_CLUSTER_NAME=c4-${CASSTAG}-cluster
-  backend-3:
-    image: cassandra:${CASSTAG}
-    networks:
-      - backend
-    mem_limit: 2G
-    depends_on:
-      - backend-2
-    environment:
-      - HEAP_NEWSIZE=128M
-      - MAX_HEAP_SIZE=1024M
-      - CASSANDRA_SEEDS=backend-1
       - CASSANDRA_CLUSTER_NAME=c4-${CASSTAG}-cluster
   stargate:
     image: stargateio/stargate-4_0:${SGTAG}

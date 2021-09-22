@@ -1,4 +1,4 @@
-## 🎓🔥 STARGATE, a gateway for multi models data API 🔥🎓
+## 🎓🔥 An OSS Api Layer for your Cassandra  🔥🎓
 
 [![License Apache2](https://img.shields.io/hexpm/l/plug.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Discord](https://img.shields.io/discord/685554030159593522)](https://discord.com/widget?id=685554030159593522&theme=dark)
@@ -125,27 +125,64 @@ sudo apt-get install curl
 Download the repository as a zip [here] or clone with the following git command
 
 ```
-git clone https://github.com/datastaxdevs/conference-2020-dataconla-stargate.git
+git clone https://github.com/datastaxdevs/conference-2021-apachecon-stargate.git
 ``` 
 
 **✅ Start all containers** :
 
-We provide a `docker-compose.yaml` file ready to go with a `Cassandra 3.11.8` backend and stargate in version `0.0.8`
+We provide a `docker-compose.yaml` file ready to go with a `Cassandra 3.11.8` backend and stargate in version `1.0.32`
 
 To start use the following
 
 ```
+export CASSTAG=4.0
+export SGTAG=v1.0.32
 docker-compose up -d
 ```
 
-**👁️ Expected output**
+If things did not start properly you might want to start one node after the other;
 
 ```
-Starting backend-1 ... done
-Starting stargate  ... done
-Starting backend-2 ... done
-Starting backend-3 ... done
+docker-compose up -d backend-1
 ```
+
+Then
+```
+docker-compose up -d backend-2
+```
+
+Then
+```
+docker-compose up -d backend-3
+```
+
+Then
+```
+docker-compose up -d stargate
+```
+**👁️ Expected output**
+
+
+```
+cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/conference-2021-apachecon-stargate> docker-compose up -d backend-1
+[+] Running 2/2
+ ⠿ Network conference-2021-apachecon-stargate_backend        Created                                                                                                       0.0s
+ ⠿ Container conference-2021-apachecon-stargate_backend-1_1  Started                                                                                                       0.5s
+cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/conference-2021-apachecon-stargate> docker-compose up -d backend-2
+[+] Running 2/2
+ ⠿ Container conference-2021-apachecon-stargate_backend-1_1  Running                                                                                                       0.0s
+ ⠿ Container conference-2021-apachecon-stargate_backend-2_1  Started                                                                                                       0.9s
+cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/conference-2021-apachecon-stargate> docker-compose up -d backend-3
+[+] Running 3/3
+ ⠿ Container conference-2021-apachecon-stargate_backend-1_1  Running                                                                                                       0.0s
+ ⠿ Container conference-2021-apachecon-stargate_backend-2_1  Running                                                                                                       0.0s
+ ⠿ Container conference-2021-apachecon-stargate_backend-3_1  Started 
+
+ cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/conference-2021-apachecon-stargate> docker-compose up -d stargate
+[+] Running 2/2
+ ⠿ Container conference-2021-apachecon-stargate_backend-1_1  Running                                                                                                       0.0s
+ ⠿ Container conference-2021-apachecon-stargate_stargate_1   Started           
+ ```
 
 Wait for all services are up. You need the 4 containers. 
 
@@ -176,6 +213,11 @@ b3a10c48dccc        cassandra:3.11.8                  "docker-entrypoint.s…"  
 **👁️ Expected output**
 ![image](pics/swagger-home.png?raw=true)
 
+- You should be able to access the Metrics UI [http://localhost:8084/metrics](http://localhost:8084/metrics)
+
+**👁️ Expected output**
+![image](pics/metrics.png?raw=true)
+
 [🏠 Back to Table of Contents](#table-of-content)
 
 ## 3. Use CQL API
@@ -202,12 +244,12 @@ UN  172.20.0.3  341.41 KiB  256          29.1%             b385cbc3-7d30-46d3-bd
 
 **✅ Get Stargate IP** :
 ```
-docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' stargate
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' `docker ps | grep stargateio | cut -b 1-12`
 ```
 
 **👁️ Expected output**
 ```
-172.20.0.4
+172.19.0.5
 ```
 
 **✅ Start CQLSH** :
@@ -215,14 +257,14 @@ docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' sta
 - Use this IP to connect with a cqlsh. *Note that the stargate image itself does not provide it we use the cqlsh from backend-1 as a sample client.*
 
 ```
-docker exec -it `docker ps | grep backend-1 | cut -b 1-12` cqlsh 172.20.0.4
+docker exec -it `docker ps | grep backend-1 | cut -b 1-12` cqlsh 172.19.0.5 -u cassandra -p cassandra
 ```
 
 **✅ Create data model** :
 
 ```sql
 CREATE KEYSPACE IF NOT EXISTS keyspace1
-  WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '3'}
+  WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '2'}
   AND durable_writes = true;
 ```
 
@@ -402,7 +444,7 @@ Now Locate the `DATA` part of the API
     "firstname": "Mookie",
     "lastname": "Betts",
     "email": "mookie.betts@gmail.com",
-    "favorite color": "blue"
+    "color": "blue"
 }
 ```
 
@@ -411,7 +453,7 @@ Now Locate the `DATA` part of the API
     "firstname": "Janesha",
     "lastname": "Doesha",
     "email": "janesha.doesha@gmail.com",
-    "favorite color": "grey"
+    "color": "grey"
 }
 ```
 
