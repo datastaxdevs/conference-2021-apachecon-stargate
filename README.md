@@ -10,7 +10,7 @@
 1. [Prerequisites](#1-prerequisite-install-docker-and-docker-compose)
 2. [Start the Demo](#2-start-the-demo)
 3. [Use CQL API](#3-use-cql-api)
-4. [Use REST API](#4-use-rest-api-swagger)
+4. [Use REST API](#4-use-rest-api)
 5. [Use Document API](#5-use-document-api-swagger)
 6. [Use GraphQL API](#6-use-graphql-api-portal)
 7. [Create an Astra Instance](#7-create-your-astra-instance)
@@ -284,7 +284,7 @@ UN  172.19.0.4  320.44 KiB  256          100.0%            9cb00b9d-3bc6-44bb-95
 docker exec -it `docker ps | grep backend-1 | cut -b 1-12` cqlsh $stargateip -u cassandra -p cassandra
 ```
 
-#### ✅ 3b. Create a new keyspace `ks1`
+#### ✅ 3b. Create your schema
 
 ```sql
 CREATE KEYSPACE ks1 WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': '3'}  AND durable_writes = true;
@@ -311,7 +311,7 @@ CREATE TABLE IF NOT EXISTS videos (
 describe ks1
 ```
 
-#### ✅ 3c. Define some structur
+#### ✅ 3c. Populate some data
 
 - Insert value using plain CQL
 
@@ -363,11 +363,11 @@ exit
 
 ## 4. Use REST API
 
-This walkthrough has been realized using the [REST API Quick Start](https://stargate.io/docs/stargate/0.1/quickstart/quick_start-rest.html)
+This walkthrough has been realized using the [REST API Quick Start](https://stargate.io/docs/stargate/0.1/quickstart/quick_start-rest.html). Here we will the the [DATA](http://localhost:8082/swagger-ui/#/data) or SwaggerUI
 
-Here we will the the [DATA](http://localhost:8082/swagger-ui/#/data) or SwaggerUI
+![image](pics/swagger-general.png?raw=true)
 
-**✅ 4a. Generate an auth token** :
+#### ✅ 4a. Generate an auth token
 
 ```bash
 curl -L -X POST 'http://localhost:8081/v1/auth' \
@@ -385,50 +385,49 @@ Copy the token value (here `74be42ef-3431-4193-b1c1-cd8bd9f48132`) in your clipb
 {"authToken":"74be42ef-3431-4193-b1c1-cd8bd9f48132"}
 ```
 
-**✅ 4b. List keyspaces** : 
+#### ✅ 4b. List keyspaces
 
-- [Get all Keyspaces](http://localhost:8082/swagger-ui/#/schemas/getAllKeyspaces)
-
-![image](pics/swagger-general.png?raw=true)
-
-
- Locale in SCHEMA
- `[GET] /v2/schemas/keyspaces`
-
+- [`GET: /v2/schemas/keyspaces`](http://localhost:8082/swagger-ui/#/schemas/getAllKeyspaces)
+ 
 ![image](pics/swagger-list-keyspace.png?raw=true)
 
 - Click `Try it out`
 - Provide your token in the field `X-Cassandra-Token`
 - Click on `Execute`
 
-**✅ 4c. List Tables** : 
 
-Locate the `SCHEMAS` part of the API
+#### ✅ 4c. List Tables
+
+- [GET /v2/schemas/keyspaces/{keyspaceName}/tables](http://localhost:8082/swagger-ui/#/schemas/getAllTables)
 
 ![image](pics/swagger-list-tables.png?raw=true)
 
 - Click `Try it out`
 - Provide your token in the field `X-Cassandra-Token`
-- keyspace: `keyspace1`
+- keyspace: `ks1`
 - Click on `Execute`
 
-**✅ 4d. List Types** : 
 
-Locate the `SCHEMAS` part of the API
+#### ✅ 4d. List Types
+
+- [GET /v2/schemas/keyspaces/{keyspaceName}/types](http://localhost:8082/swagger-ui/#/schemas/findAll)
 
 ![image](pics/swagger-list-types.png?raw=true)
 
 - Click `Try it out`
-- Provide your token in the field `X-Cassandra-Token`
-- keyspace: `keyspace1`
+- X-Cassandra-Token: `<your_token>`
+- keyspace: `ks1`
+- Click on `Execute`
 
+#### ✅ 4e Create a Table
 
-**✅ 4e Create a Table** : 
+- [POST /v2/schemas/keyspaces/{keyspaceName}/tables](http://localhost:8082/swagger-ui/#/schemas/createTable)
 
 ![image](pics/swagger-create-table.png?raw=true)
 
+- Click `Try it out`
 - X-Cassandra-Token: `<your_token>`
-- keyspace: `keyspace1`
+- keyspace: `ks1`
 - Data
 ```json
 {
@@ -466,44 +465,106 @@ Locate the `SCHEMAS` part of the API
 }
 ```
 
-Now Locate the `DATA` part of the API
+**👁️ Expected output**
 
-**✅ 4f. Insert a row** : 
+```json
+{
+  "name": "users"
+}
+```
 
-Navigate to `DATA` and focus on `V2`
+#### ✅ 4f. Insert Rows
+
+*Notice than for the DML you move to `DATA`. Make sure you are using url with `V2`, `V1` would also work but this is NOT the same payload.* 
+
+- [POST /v2/keyspaces/{keyspaceName}/{tableName}](http://localhost:8082/swagger-ui/#/data/createRow)
 
 ![image](pics/swagger-addrows.png?raw=true)
 
 - X-Cassandra-Token: `<your_token>`
-- keyspaceName: `keyspace1`
+- keyspaceName: `ks1`
 - tableName: `users`
 - Data
 ```json
 {   
-    "firstname": "Mookie",
-    "lastname": "Betts",
-    "email": "mookie.betts@gmail.com",
+    "firstname": "Cedrick",
+    "lastname": "Lunven",
+    "email": "c.lunven@gmail.com",
     "color": "blue"
 }
 ```
 
+You can note that the output code is `201` and return your primary key `{ "firstname": "Cedrick","lastname": "Lunven" }
+
+- You can add a second record changing only the payload
 ```json
 {
-    "firstname": "Janesha",
-    "lastname": "Doesha",
-    "email": "janesha.doesha@gmail.com",
-    "color": "grey"
+    "firstname": "David",
+    "lastname": "Gilardi",
+    "email": "d.gilardi@gmail.com",
+    "color": "blue"
 }
 ```
 
-**✅ 4g. Read data** : 
+- Add a third
+```json
+{
+    "firstname": "Kirsten",
+    "lastname": "Hunter",
+    "email": "k.hunter@gmail.com",
+    "color": "pink"
+}
+```
 
+#### ✅ 4g. Read multiple rows
+
+- [GET /v2/keyspaces/{keyspaceName}/{tableName}/rows](http://localhost:8082/swagger-ui/#/data/getAllRows_1)
 ![image](pics/swagger-listrows.png?raw=true)
 
+- X-Cassandra-Token: `<your_token>`
+- keyspaceName: `ks1`
+- tableName: `users`
+- Click Execute
+
+- Notice how now you can only limited return fields
+
+- fields: `firstname, lastname`
+
+#### ✅ 4h. Read a single partition
+
+- [GET /v2/keyspaces/{keyspaceName}/{tableName}/{primaryKey}](http://localhost:8082/swagger-ui/#/data/getRows_1)
 
 - X-Cassandra-Token: `<your_token>`
-- keyspaceName: `keyspace1`
+- keyspaceName: `ks1`
 - tableName: `users`
+- primaryKey; 'Cedrick`
+- Click Execute
+
+```diff
+- Important: The Swagger user interface is limited as of now and you cannot test a composite key (here adding Lunven). This is a bug in the UI not the API.
+```
+
+#### ✅ 4i. Delete a row
+
+- [DELETE /v2/keyspaces/{keyspaceName}/{tableName}/{primaryKey}](http://localhost:8082/swagger-ui/#/data/deleteRows)
+
+- X-Cassandra-Token: `<your_token>`
+- keyspaceName: `ks1`
+- tableName: `users`
+- primaryKey; 'Cedrick`
+- Click Execute
+
+#### ✅ 4j. Searches
+
+- [GET /v2/keyspaces/{keyspaceName}/{tableName}](http://localhost:8082/swagger-ui/#/data/getRowWithWhere)
+
+- X-Cassandra-Token: `<your_token>`
+- keyspaceName: `ks1`
+- tableName: `users`
+- whereClause; '{"firstname": {"$eq":"David"}}`
+- Click Execute
+
+I let you try with `{"lastname": {"$eq":"Gilardi"}}`.. expected right ?
 
 
 [🏠 Back to Table of Contents](#table-of-content)
