@@ -150,13 +150,13 @@ docker-compose up -d backend-2
 docker-compose up -d backend-3
 ````
 
-#### ✅ 2e. Check status if your nodes with `nodetool`
+#### ✅ 2e. Check status of your nodes with `nodetool`
 
 ```bash
 docker exec -it `docker ps | grep backend-1 | cut -b 1-12` nodetool status
 ```
 
-#### ✅ 2f. Extract IP of backend-1 as variable `backend1ip`
+#### ✅ 2f. Extract IP of `backend-1` as variable `backend1ip`
 
 - Extract variable
 ```bash
@@ -168,7 +168,7 @@ export backend1ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPA
 echo $backend1ip
 ```
 
-#### ✅ 2g. Connect as `CQLSH` using the new created var **
+#### ✅ 2g. Connect as `CQLSH` using the new created var
 
 ```bash
 docker exec -it `docker ps | grep backend-1 | cut -b 1-12` cqlsh $backend1ip -u cassandra -p cassandra
@@ -192,7 +192,7 @@ CREATE KEYSPACE data_endpoint_auth WITH replication = {'class': 'NetworkTopology
 exit
 ```
 
-#### ✅ 2i. Start Stargate Node**
+#### ✅ 2i. Start Stargate Node
 
 - Start the node
 ```
@@ -534,6 +534,8 @@ You can note that the output code is `201` and return your primary key `{ "first
 
 - [GET /v2/keyspaces/{keyspaceName}/{tableName}/{primaryKey}](http://localhost:8082/swagger-ui/#/data/getRows_1)
 
+![image](pics/swagger-readrows.png?raw=true)
+
 - X-Cassandra-Token: `<your_token>`
 - keyspaceName: `ks1`
 - tableName: `users`
@@ -548,6 +550,8 @@ You can note that the output code is `201` and return your primary key `{ "first
 
 - [DELETE /v2/keyspaces/{keyspaceName}/{tableName}/{primaryKey}](http://localhost:8082/swagger-ui/#/data/deleteRows)
 
+![image](pics/swagger-deleterows.png?raw=true)
+
 - X-Cassandra-Token: `<your_token>`
 - keyspaceName: `ks1`
 - tableName: `users`
@@ -557,6 +561,9 @@ You can note that the output code is `201` and return your primary key `{ "first
 #### ✅ 4j. Searches
 
 - [GET /v2/keyspaces/{keyspaceName}/{tableName}](http://localhost:8082/swagger-ui/#/data/getRowWithWhere)
+
+![image](pics/swagger-searchrows.png?raw=true)
+
 
 - X-Cassandra-Token: `<your_token>`
 - keyspaceName: `ks1`
