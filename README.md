@@ -120,93 +120,148 @@ sudo apt-get install curl
 
 ## 2. Start the demo
 
-**✅ Clone the repository** :
+#### ✅ 2a. Clone the repository 
 
-Download the repository as a zip [here] or clone with the following git command
+Download the repository as a zip [here](https://github.com/datastaxdevs/conference-2021-apachecon-stargate/archive/refs/heads/main.zip) or clone with the following git command
 
-```
+```bash
 git clone https://github.com/datastaxdevs/conference-2021-apachecon-stargate.git
 ``` 
 
-**✅ Start all containers** :
+#### ✅ 2b. Start `backend-1`**
 
-We provide a `docker-compose.yaml` file ready to go with a `Cassandra 3.11.8` backend and stargate in version `1.0.32`
-
-To start use the following
+We provide a `docker-compose.yaml` file ready to go with a `Cassandra 3.11.8` backend and stargate in version `1.0.34`
 
 ```
-export CASSTAG=4.0
-export SGTAG=v1.0.32
-docker-compose up -d
-```
-
-If things did not start properly you might want to start one node after the other;
-
-```
+export CASSTAG=3.11.8
+export SGTAG=v1.0.34
 docker-compose up -d backend-1
 ```
 
-Then
-```
+#### ✅ 2c. When the bootstrap is completed, Start node2 with `docker-compose`
+
+```bash
 docker-compose up -d backend-2
 ```
 
-Then
-```
+#### ✅ 2d. When the bootstrap is completed, Start node3 with `docker-compose`
+
+```bash
 docker-compose up -d backend-3
+````
+
+#### ✅ 2e. Check status if your nodes with `nodetool`
+
+```bash
+docker exec -it `docker ps | grep backend-1 | cut -b 1-12` nodetool status
 ```
 
-Then
+#### ✅ 2f. Extract IP of backend-1 as variable `backend1ip`
+
+- Extract variable
+```bash
+export backend1ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' `docker ps | grep backend-1 | cut -b 1-12`)
+```
+
+- Check that we are OK
+```bash
+echo $backend1ip
+```
+
+#### ✅ 2g. Connect as `CQLSH` using the new created var **
+
+```bash
+docker exec -it `docker ps | grep backend-1 | cut -b 1-12` cqlsh $backend1ip -u cassandra -p cassandra
+```
+
+#### ✅ 2h. Create Keyspace `data_endpoint_auth`
+
+The stargate node executes query with `LOCAL_QUORUM`, the table handling the token `data_endpoint_auth` must have a replication factory of 3.
+The datacenter used everywhere is `datacenter1`
+Also here we create an sample keyspace `ks1` for tests.
+
+- Create keyspace
+```sql
+DROP KEYSPACE IF EXISTS data_endpoint_auth;
+CREATE KEYSPACE data_endpoint_auth WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': '3'}  AND durable_writes = true;
+```
+
+- Exit CQLSH
+```
+exit
+```
+
+#### ✅ 2i. Start Stargate Node**
+
+- Start the node
 ```
 docker-compose up -d stargate
 ```
-**👁️ Expected output**
 
+- Wait for the node to be up
+```
+echo "Waiting for stargate to start up..."
+while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:8082/health)" != "200" ]]; do
+    printf '.'
+    sleep 5
+done
+```
+
+#### ✅ 2j. Wait for the node to bootstrap and get IP**
+
+- Extract variable
+```
+export stargateip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' `docker ps | grep stargateio | cut -b 1-12`)
+```
+
+- check we are OK
+```
+echo $stargateip
+```
+
+#### ✅ 2k. Check we are all GOOD**
 
 ```
-cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/conference-2021-apachecon-stargate> docker-compose up -d backend-1
-[+] Running 2/2
- ⠿ Network conference-2021-apachecon-stargate_backend        Created                                                                                                       0.0s
- ⠿ Container conference-2021-apachecon-stargate_backend-1_1  Started                                                                                                       0.5s
-cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/conference-2021-apachecon-stargate> docker-compose up -d backend-2
-[+] Running 2/2
- ⠿ Container conference-2021-apachecon-stargate_backend-1_1  Running                                                                                                       0.0s
- ⠿ Container conference-2021-apachecon-stargate_backend-2_1  Started                                                                                                       0.9s
-cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/conference-2021-apachecon-stargate> docker-compose up -d backend-3
-[+] Running 3/3
- ⠿ Container conference-2021-apachecon-stargate_backend-1_1  Running                                                                                                       0.0s
- ⠿ Container conference-2021-apachecon-stargate_backend-2_1  Running                                                                                                       0.0s
- ⠿ Container conference-2021-apachecon-stargate_backend-3_1  Started 
-
- cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/conference-2021-apachecon-stargate> docker-compose up -d stargate
-[+] Running 2/2
- ⠿ Container conference-2021-apachecon-stargate_backend-1_1  Running                                                                                                       0.0s
- ⠿ Container conference-2021-apachecon-stargate_stargate_1   Started           
- ```
-
-Wait for all services are up. You need the 4 containers. 
-
-You may have to relaunch the command multiple times as stargate need the 3 nodes to be up to join the cluster.
-
-```bash
+echo "Check Status...."
+echo "Backend-1 IP: $backend1ip"
+echo "Stargate IP: $stargateip"
 docker ps
+docker exec -it `docker ps | grep backend-1 | cut -b 1-12` nodetool status
 ```
+
 
 **👁️ Expected output**
 
 ```bash
-CONTAINER ID        IMAGE                             COMMAND                  CREATED             STATUS              PORTS                                                       NAMES
-237d9137884f        stargateio/stargate-3_11:v0.0.8   "./starctl"              25 hours ago        Up 4 hours          0.0.0.0:8080-8082->8080-8082/tcp, 0.0.0.0:9045->9042/tcp    stargate
-b3a10c48dccc        cassandra:3.11.8                  "docker-entrypoint.s…"   25 hours ago        Up 4 hours          7000-7001/tcp, 7199/tcp, 9042/tcp, 9160/tcp                 backend-3
-68be3b9bfc23        cassandra:3.11.8                  "docker-entrypoint.s…"   25 hours ago        Up 4 hours          7000-7001/tcp, 7199/tcp, 9042/tcp, 9160/tcp                 backend-2
-23b009a08872        cassandra:3.11.8                  "docker-entrypoint.s…"   25 hours ago        Up 4 hours          7000-7001/tcp, 7199/tcp, 9160/tcp, 0.0.0.0:9044->9042/tcp   backend-1
+Check Status....
+Backend-1 IP: 172.19.0.2
+Stargate IP: 172.19.0.5
+
+PROMPT> docker ps
+CONTAINER ID   IMAGE                              COMMAND                  CREATED       STATUS       PORTS                                                                                                                                                 NAMES
+2200f5c86bfd   stargateio/stargate-3_11:v1.0.34   "./starctl"              3 hours ago   Up 3 hours   0.0.0.0:8080-8082->8080-8082/tcp, :::8080-8082->8080-8082/tcp, 0.0.0.0:8084->8084/tcp, :::8084->8084/tcp, 0.0.0.0:9045->9042/tcp, :::9045->9042/tcp   cassandra-3_stargate_1
+16cb48746e72   cassandra:3.11.8                   "docker-entrypoint.s…"   3 hours ago   Up 3 hours   7000-7001/tcp, 7199/tcp, 9042/tcp, 9160/tcp                                                                                                           cassandra-3_backend-3_1
+31bd64f67237   cassandra:3.11.8                   "docker-entrypoint.s…"   3 hours ago   Up 3 hours   7000-7001/tcp, 7199/tcp, 9042/tcp, 9160/tcp                                                                                                           cassandra-3_backend-2_1
+835408a3d2d0   cassandra:3.11.8                   "docker-entrypoint.s…"   3 hours ago   Up 3 hours   7000-7001/tcp, 7199/tcp, 9160/tcp, 0.0.0.0:9044->9042/tcp, :::9044->9042/tcp                                                                          cassandra-3_backend-1_1
+
+PROMPT>  docker exec -it `docker ps | grep backend-1 | cut -b 1-12` nodetool status
+
+Datacenter: datacenter1
+=======================
+Status=Up/Down
+|/ State=Normal/Leaving/Joining/Moving
+--  Address     Load       Tokens       Owns (effective)  Host ID                               Rack
+UN  172.19.0.3  355.37 KiB  256          100.0%            75b42435-3197-42ed-bdd8-fdb00294865b  rack1
+UN  172.19.0.2  331.99 KiB  256          100.0%            45a33f3a-9115-4878-a1c2-54d00b4c3ff0  rack1
+UN  172.19.0.4  320.44 KiB  256          100.0%            9cb00b9d-3bc6-44bb-95a8-e0152d9db9f8  rack1
+
+cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/stargate/cassandra-3.11> 
 ```
 
 - You should be able to access the GRAPH QL PORTAL on [http://localhost:8080/playground](http://localhost:8080/playground)
 
 **👁️ Expected output**
 ![image](pics/playground-home.png?raw=true)
-
 
 - You should be able to access the Swagger UI on [http://localhost:8082/swagger-ui/#/](http://localhost:8082/swagger-ui/#/)
 
@@ -222,37 +277,7 @@ b3a10c48dccc        cassandra:3.11.8                  "docker-entrypoint.s…"  
 
 ## 3. Use CQL API
 
-**✅ Check that everything is OK** :
-
-```
-docker exec -it `docker ps | grep backend-1 | cut -b 1-12` nodetool status
-```
-
-**👁️ Expected output**
-```bash
-nodetool status
-Datacenter: datacenter1
-=======================
-Status=Up/Down
-|/ State=Normal/Leaving/Joining/Moving
---  Address     Load       Tokens       Owns (effective)  Host ID                               Rack
-UN  172.20.0.4  179.98 KiB  8            1.1%              9873d76b-b439-4c81-92d7-4de103052af0  rack1
-UN  172.20.0.5  370.43 KiB  256          35.0%             52e259b8-92ee-402c-b3b2-b1b39ad10ebb  rack1
-UN  172.20.0.2  354.2 KiB  256          34.8%             9dc3b120-19a7-4eda-8828-83532d816fcc  rack1
-UN  172.20.0.3  341.41 KiB  256          29.1%             b385cbc3-7d30-46d3-bd14-f1b8ee01044d  rack1
-```
-
-**✅ Get Stargate IP** :
-```
-docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' `docker ps | grep stargateio | cut -b 1-12`
-```
-
-**👁️ Expected output**
-```
-172.19.0.5
-```
-
-**✅ Start CQLSH** :
+**✅ 3a. Start CQLSH** :
 
 - Use this IP to connect with a cqlsh. *Note that the stargate image itself does not provide it we use the cqlsh from backend-1 as a sample client.*
 
