@@ -39,7 +39,11 @@ docker exec -it `docker ps | grep backend-1 | cut -b 1-12` cqlsh 172.19.0.2 -u c
 
 **✅ 1g. Create expected data model**
 
-The stargate node executes query with `LOCAL_QUORUM`, the table handling the token `data_endpoint_auth` must have a replication factory of 3 in the 
+The stargate node executes query with `LOCAL_QUORUM`, the table handling the token `data_endpoint_auth` must have a replication factory of 3.
+
+The datacenter used everywhere is `datacenter1`
+
+Also here we create an sample keyspace `ks1` for tests.
 
 ```cql
 DROP KEYSPACE IF EXISTS data_endpoint_auth;
@@ -75,21 +79,40 @@ VALUES(uuid(), 'clu@sample.com', 'sample video',
      { 'mp4':{width:1,height:1},'ogg':{width:1,height:1}});
 ```
 
+**✅ 1h. Start Stargate Node**
 
-
-
-
-docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' `docker ps | grep stargateio | cut -b 1-12`
-
+```
 docker-compose up -d stargate
+```
 
+**✅ 1i. Wait for the node to bootstrap and get IP**
 
+```
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' `docker ps | grep stargateio | cut -b 1-12`
+```
+
+## Use stargate
+
+**✅ 2a. Connect SSH with the stargate node**
+
+```
 docker exec -it `docker ps | grep backend-1 | cut -b 1-12` cqlsh 172.18.0.5 -u cassandra -p cassandra
+```
 
+**✅ 2b. Get a token**
 
+```
 curl -L -X POST 'http://localhost:8081/v1/auth' \
   -H 'Content-Type: application/json' \
   --data-raw '{
     "username": "cassandra",
     "password": "cassandra"
 }'
+```
+
+**✅ 2c. Access REST**
+
+- [Get all Keyspaces](http://localhost:8082/swagger-ui/#/schemas/getAllKeyspaces)
+
+
+
