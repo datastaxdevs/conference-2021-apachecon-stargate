@@ -128,11 +128,11 @@ Download the repository as a zip [here](https://github.com/datastaxdevs/conferen
 git clone https://github.com/datastaxdevs/conference-2021-apachecon-stargate.git
 ``` 
 
-#### ✅ 2b. Start `backend-1`**
+#### ✅ 2b. Start `backend-1`
 
 We provide a `docker-compose.yaml` file ready to go with a `Cassandra 3.11.8` backend and stargate in version `1.0.34`
 
-```
+```bash
 export CASSTAG=3.11.8
 export SGTAG=v1.0.34
 docker-compose up -d backend-1
@@ -181,6 +181,7 @@ The datacenter used everywhere is `datacenter1`
 Also here we create an sample keyspace `ks1` for tests.
 
 - Create keyspace
+
 ```sql
 DROP KEYSPACE IF EXISTS data_endpoint_auth;
 CREATE KEYSPACE data_endpoint_auth WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': '3'}  AND durable_writes = true;
@@ -207,7 +208,7 @@ while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:8082/healt
 done
 ```
 
-#### ✅ 2j. Wait for the node to bootstrap and get IP**
+#### ✅ 2j. Wait for the node to bootstrap and get IP
 
 - Extract variable
 ```
@@ -219,7 +220,7 @@ export stargateip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPA
 echo $stargateip
 ```
 
-#### ✅ 2k. Check we are all GOOD**
+#### ✅ 2k. Check we are all GOOD
 
 ```
 echo "Check Status...."
@@ -228,7 +229,6 @@ echo "Stargate IP: $stargateip"
 docker ps
 docker exec -it `docker ps | grep backend-1 | cut -b 1-12` nodetool status
 ```
-
 
 **👁️ Expected output**
 
@@ -255,10 +255,9 @@ UN  172.19.0.3  355.37 KiB  256          100.0%            75b42435-3197-42ed-bd
 UN  172.19.0.2  331.99 KiB  256          100.0%            45a33f3a-9115-4878-a1c2-54d00b4c3ff0  rack1
 UN  172.19.0.4  320.44 KiB  256          100.0%            9cb00b9d-3bc6-44bb-95a8-e0152d9db9f8  rack1
 
-cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/stargate/cassandra-3.11> 
 ```
 
-- You should be able to access the GRAPH QL PORTAL on [http://localhost:8080/playground](http://localhost:8080/playground)
+- You should be able to access the GRAPHQL Playground on [http://localhost:8080/playground](http://localhost:8080/playground)
 
 **👁️ Expected output**
 ![image](pics/playground-home.png?raw=true)
@@ -277,26 +276,20 @@ cedricklunven@clunven-rmbp16:~/dev/workspaces/datastax/stargate/cassandra-3.11>
 
 ## 3. Use CQL API
 
-**✅ 3a. Start CQLSH** :
+#### ✅ 3a. Start CQLSH
 
 - Use this IP to connect with a cqlsh. *Note that the stargate image itself does not provide it we use the cqlsh from backend-1 as a sample client.*
 
-```
-docker exec -it `docker ps | grep backend-1 | cut -b 1-12` cqlsh 172.19.0.5 -u cassandra -p cassandra
+```bash
+docker exec -it `docker ps | grep backend-1 | cut -b 1-12` cqlsh $stargateip -u cassandra -p cassandra
 ```
 
-**✅ Create data model** :
+#### ✅ 3b. Create a new keyspace `ks1`
 
 ```sql
-CREATE KEYSPACE IF NOT EXISTS keyspace1
-  WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '2'}
-  AND durable_writes = true;
-```
+CREATE KEYSPACE ks1 WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': '3'}  AND durable_writes = true;
 
-- Create schema a UDT and a table
-
-```sql
-use keyspace1;
+use ks1;
 
 CREATE TYPE IF NOT EXISTS video_format (
   width   int,
@@ -315,10 +308,10 @@ CREATE TABLE IF NOT EXISTS videos (
  PRIMARY KEY (videoid)
 );
 
-describe keyspace;
+describe ks1
 ```
 
-**✅ Use the data model** :
+#### ✅ 3c. Define some structur
 
 - Insert value using plain CQL
 
@@ -368,10 +361,11 @@ exit
 
 [🏠 Back to Table of Contents](#table-of-content)
 
-## 4. Use REST API (swagger)
+## 4. Use REST API
 
 This walkthrough has been realized using the [REST API Quick Start](https://stargate.io/docs/stargate/0.1/quickstart/quick_start-rest.html)
 
+Here we will the the [DATA](http://localhost:8082/swagger-ui/#/data) or SwaggerUI
 
 **✅ 4a. Generate an auth token** :
 
@@ -393,9 +387,10 @@ Copy the token value (here `74be42ef-3431-4193-b1c1-cd8bd9f48132`) in your clipb
 
 **✅ 4b. List keyspaces** : 
 
-Locate the `SCHEMAS` part of the API
+- [Get all Keyspaces](http://localhost:8082/swagger-ui/#/schemas/getAllKeyspaces)
 
 ![image](pics/swagger-general.png?raw=true)
+
 
  Locale in SCHEMA
  `[GET] /v2/schemas/keyspaces`
